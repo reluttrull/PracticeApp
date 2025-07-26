@@ -3,6 +3,7 @@ package com.example.practiceapp
 import android.os.Bundle
 import android.view.View
 import androidx.compose.ui.graphics.Color
+//import android.graphics.Color
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -26,29 +27,39 @@ class MainActivity : ComponentActivity() {
 //        val rootView = findViewById<View>(android.R.id.content)
 //        rootView.setBackgroundColor(Color.RED)
         setContent {
-            var isOkay by remember {
+            var hasPracticed by remember {
                 mutableStateOf(false)
             }
-            val colors = if (isOkay) {
-                Color.Green
+            val colors = if (hasPracticed) {
+                Color(android.graphics.Color.parseColor("#A7FC85"))
             } else {
-                Color.Red
+                Color(android.graphics.Color.parseColor("#FF6666"))
             }
             PracticeAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
                     Column (
                         verticalArrangement = Arrangement.Center,
                         modifier = Modifier
-                            .background(Color.Red)
+                            .background(colors)
                             .fillMaxSize(),
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
-                        MainContent(
-                            verbed = "practiced",
-                            modifier = Modifier
-                                .padding(innerPadding)
+                        Text(
+                            text = "Have you practiced today?",
+                            modifier = Modifier.padding(innerPadding),
+                            color = Color.Black
                         )
-                        QuestionAndAnswer()
+                        Button(onClick = { hasPracticed = !hasPracticed }) {
+                            if (!hasPracticed) {
+                                Text(
+                                    text = "I have"
+                                )
+                            } else {
+                                Text(
+                                    text = "I haven't"
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -56,40 +67,12 @@ class MainActivity : ComponentActivity() {
     }
 }
 
-@Composable
-fun MainContent(verbed: String, modifier: Modifier = Modifier) {
-    Text(
-        text = "Have you $verbed today?",
-        modifier = modifier
-    )
-}
 
-@Composable
-fun QuestionAndAnswer() {
-    var hasPracticed by remember { mutableStateOf(false) }
-//    fun onClick () = { hasPracticed = true }
-    Button(onClick = { hasPracticed = !hasPracticed }) {
-        if (!hasPracticed) {
-            Text(
-                text = "I have"
-            )
-        } else {
-            Text(
-                text = "I haven't"
-            )
-        }
-    }
-    Text(
-        text = "$hasPracticed"
-//        text = if (hasPracticed) { "yes" } else { "no" }
-    )
-}
-
-@Preview(showBackground = true)
-@Composable
-fun MainContentPreview() {
-    PracticeAppTheme {
-        MainContent("practiced")
-        QuestionAndAnswer()
-    }
-}
+//@Preview(showBackground = true)
+//@Composable
+//fun MainContentPreview() {
+//    PracticeAppTheme {
+//        MainContent("practiced")
+//        QuestionAndAnswer()
+//    }
+//}
