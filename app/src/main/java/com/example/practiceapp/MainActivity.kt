@@ -17,6 +17,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
+import java.time.LocalTime
 import com.example.practiceapp.ui.theme.PracticeAppTheme
 
 class MainActivity : ComponentActivity() {
@@ -27,13 +28,22 @@ class MainActivity : ComponentActivity() {
 //        val rootView = findViewById<View>(android.R.id.content)
 //        rootView.setBackgroundColor(Color.RED)
         setContent {
+            val currentHour = LocalTime.now().hour
             var hasPracticed by remember {
                 mutableStateOf(false)
             }
             val colors = if (hasPracticed) {
                 Color(android.graphics.Color.parseColor("#A7FC85"))
             } else {
-                Color(android.graphics.Color.parseColor("#FF6666"))
+                if (currentHour < 6) {
+                    Color(android.graphics.Color.parseColor("#FFC6C6"))
+                } else if (currentHour < 12) {
+                    Color(android.graphics.Color.parseColor("#FFA0A0"))
+                } else if (currentHour < 18) {
+                    Color(android.graphics.Color.parseColor("#FF7F7F"))
+                } else {
+                    Color(android.graphics.Color.parseColor("#FF4848"))
+                }
             }
             PracticeAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
