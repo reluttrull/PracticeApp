@@ -17,6 +17,8 @@
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
                 <action android:name="com.example.MY_WIDGET_CLICK" />
+                <action android:name="com.example.OVERNIGHT_UPDATE" />
+                <action android:name="com.example.CHECKIN_UPDATE" />
             </intent-filter>
 
             <meta-data
