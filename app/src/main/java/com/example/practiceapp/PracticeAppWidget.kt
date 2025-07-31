@@ -125,16 +125,22 @@ class PracticeAppWidget : AppWidgetProvider() {
             views.setTextViewText(R.id.appwidget_text, successText)
             views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#C1FDAA".toColorInt());
 
-            val sharedPreferences = context.getSharedPreferences("PracticeLog", MODE_PRIVATE)
-            val editor = sharedPreferences.edit()
-            editor.putString(ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).toString(), "true")
-            editor.apply()
-
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, PracticeAppWidget::class.java)
             val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
 
             appWidgetManager.updateAppWidget(appWidgetIds, views)
+
+            val sharedPreferences = context.getSharedPreferences("PracticeLog", MODE_PRIVATE)
+            val today = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
+            val practicedToday =
+                sharedPreferences.getString(today.toString(), "")
+                    .toBoolean()
+            if (!practicedToday) {
+                val editor = sharedPreferences.edit()
+                editor.putString(today.toString(), "true")
+                editor.apply()
+            }
         }
 
         super.onReceive(context, intent)
