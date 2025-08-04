@@ -4,21 +4,17 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
+import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.content.SharedPreferences
-import android.view.View
-import android.widget.Button
 import android.widget.RemoteViews
-import android.widget.TextView
-import android.widget.Toast
-import androidx.compose.ui.graphics.Color
 import androidx.core.graphics.toColorInt
-import java.time.Duration
+import com.example.practiceapp.AlarmHelper.Companion.alarmManager
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+
 
 /**
  * Implementation of App Widget functionality.
@@ -58,8 +54,8 @@ class PracticeAppWidget : AppWidgetProvider() {
             // Instruct the widget manager to update the widget
             appWidgetManager.updateAppWidget(appWidgetId, views)
 
-            scheduleUpdates(context)
-            scheduleCheckins(context)
+            AlarmHelper.scheduleUpdates(context)
+            AlarmHelper.scheduleCheckins(context, true)
         }
     }
 
@@ -69,7 +65,7 @@ class PracticeAppWidget : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         // Enter relevant functionality for when the last widget is disabled
-        context.alarmManager.cancel(getUpdatePendingIntent(context))
+        context.alarmManager.cancel(AlarmHelper.getCheckinPendingIntent(context))
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -117,9 +113,13 @@ class PracticeAppWidget : AppWidgetProvider() {
 
                 appWidgetManager.updateAppWidget(appWidgetIds, views)
                 // schedule next checkin if hasn't practiced, otherwise update will reset
-                scheduleCheckins(context)
+                AlarmHelper.scheduleCheckins(context, false)
+            } else {
+                AlarmHelper.scheduleUpdates(context)
             }
         } else if (intent.action == "com.example.MY_WIDGET_CLICK") {
+            // for testing
+            val test = AlarmHelper.getActiveWidgetIds(context)
             // Handle the click event
             val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
             views.setTextViewText(R.id.appwidget_text, successText)
@@ -146,76 +146,77 @@ class PracticeAppWidget : AppWidgetProvider() {
         super.onReceive(context, intent)
     }
 
-    private fun getActiveWidgetIds(context: Context): IntArray {
-        val appWidgetManager = AppWidgetManager.getInstance(context)
-        val componentName = ComponentName(context, this::class.java)
+}
 
-        // return ID of all active widgets within this AppWidgetProvider
-        return appWidgetManager.getAppWidgetIds(componentName)
+class AlarmHelper {
+    companion object {
+        fun scheduleCheckins(context: Context, isImmediate: Boolean) {
+            val activeWidgetIds = getActiveWidgetIds(context)
+
+            if (activeWidgetIds.isNotEmpty()) {
+                // midnight tomorrow
+                val nextUpdate: ZonedDateTime;
+                if (isImmediate) {
+                    nextUpdate = ZonedDateTime.now().plusMinutes(1);
+                } else {
+                    nextUpdate = ZonedDateTime.now().plusHours(1);
+                }
+                val pendingIntent = getCheckinPendingIntent(context)
+
+                context.alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    nextUpdate.toInstant()
+                        .toEpochMilli(), // alarm time in millis since 1970-01-01 UTC
+                    pendingIntent
+                )
+            }
+        }
+        fun scheduleUpdates(context: Context) {
+            val activeWidgetIds = getActiveWidgetIds(context)
+
+            if (activeWidgetIds.isNotEmpty()) {
+                // midnight tomorrow
+                val nextUpdate = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1);
+                val pendingIntent = getCheckinPendingIntent(context)
+
+                context.alarmManager.set(
+                    AlarmManager.RTC_WAKEUP,
+                    nextUpdate.toInstant()
+                        .toEpochMilli(), // alarm time in millis since 1970-01-01 UTC
+                    pendingIntent
+                )
+            }
+        }
+
+        fun getActiveWidgetIds(context: Context): IntArray {
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val componentName = ComponentName(context, PracticeAppWidget::class.java)
+
+            // return ID of all active widgets within this AppWidgetProvider
+            return appWidgetManager.getAppWidgetIds(componentName)
+        }
+        fun getCheckinPendingIntent(context: Context): PendingIntent {
+            val widgetClass = PracticeAppWidget::class.java
+            val widgetIds = getActiveWidgetIds(context)
+            val updateIntent = Intent(context, widgetClass)
+                .setAction("com.example.CHECKIN_UPDATE")
+                .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
+            val requestCode = widgetClass.name.hashCode()
+            val flags = PendingIntent.FLAG_CANCEL_CURRENT or
+                    PendingIntent.FLAG_IMMUTABLE
+
+            return PendingIntent.getBroadcast(context, requestCode, updateIntent, flags)
+        }
+
+        val Context.alarmManager: AlarmManager
+            get() = getSystemService(Context.ALARM_SERVICE) as AlarmManager
     }
 
-    private fun scheduleCheckins(context: Context) {
-        val activeWidgetIds = getActiveWidgetIds(context)
-
-        if (activeWidgetIds.isNotEmpty()) {
-            // midnight tomorrow
-            val nextUpdate = ZonedDateTime.now().plusHours(1)
-            val pendingIntent = getCheckinPendingIntent(context)
-
-            context.alarmManager.set(
-                AlarmManager.RTC_WAKEUP,
-                nextUpdate.toInstant().toEpochMilli(), // alarm time in millis since 1970-01-01 UTC
-                pendingIntent
-            )
+}
+class BootBroadcastReceiver : BroadcastReceiver() {
+    override fun onReceive(pContext: Context, intent: Intent) {
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) {
+            AlarmHelper.scheduleCheckins(pContext, true)
         }
     }
-
-    private fun scheduleUpdates(context: Context) {
-        val activeWidgetIds = getActiveWidgetIds(context)
-
-        if (activeWidgetIds.isNotEmpty()) {
-            // midnight tomorrow
-            val nextUpdate = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1);
-            val pendingIntent = getUpdatePendingIntent(context)
-
-            context.alarmManager.set(
-                AlarmManager.RTC_WAKEUP,
-                nextUpdate.toInstant().toEpochMilli(), // alarm time in millis since 1970-01-01 UTC
-                pendingIntent
-            )
-        }
-    }
-
-    private fun getCheckinPendingIntent(context: Context): PendingIntent {
-        val widgetClass = this::class.java
-        val widgetIds = getActiveWidgetIds(context)
-        val updateIntent = Intent(context, widgetClass)
-            .setAction("com.example.CHECKIN_UPDATE")
-            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
-        val requestCode = widgetClass.name.hashCode()
-        val flags = PendingIntent.FLAG_CANCEL_CURRENT or
-                PendingIntent.FLAG_IMMUTABLE
-
-        return PendingIntent.getBroadcast(context, requestCode, updateIntent, flags)
-    }
-
-    private fun getUpdatePendingIntent(context: Context): PendingIntent {
-        val widgetClass = this::class.java
-        val widgetIds = getActiveWidgetIds(context)
-        val updateIntent = Intent(context, widgetClass)
-            .setAction("android.appwidget.action.APPWIDGET_UPDATE") // update whole app fresh
-            .putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, widgetIds)
-        val requestCode = widgetClass.name.hashCode()
-        val flags = PendingIntent.FLAG_CANCEL_CURRENT or
-                PendingIntent.FLAG_IMMUTABLE
-
-        return PendingIntent.getBroadcast(context, requestCode, updateIntent, flags)
-    }
-
-    private val Context.alarmManager: AlarmManager
-        get() = getSystemService(Context.ALARM_SERVICE) as AlarmManager
-//
-//    companion object {
-//        private val WIDGET_UPDATE_INTERVAL = Duration.ofMinutes(30)
-//    }
 }

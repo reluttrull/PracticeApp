@@ -19,6 +19,9 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.MutableLiveData
 import java.time.LocalTime
 import com.example.practiceapp.ui.theme.PracticeAppTheme
+import java.time.ZonedDateTime
+import java.time.temporal.ChronoUnit
+import androidx.core.content.edit
 
 class MainActivity : ComponentActivity() {
 
@@ -59,7 +62,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding),
                             color = Color.Black
                         )
-                        Button(onClick = { hasPracticed = !hasPracticed }) {
+                        Button(onClick = { handleClick(); hasPracticed = !hasPracticed }) {
                             if (!hasPracticed) {
                                 Text(
                                     text = "I have"
@@ -72,6 +75,19 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                 }
+            }
+        }
+    }
+
+    private fun handleClick() {
+        val sharedPreferences = this.getSharedPreferences("PracticeLog", MODE_PRIVATE)
+        val today = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
+        val practicedToday =
+            sharedPreferences.getString(today.toString(), "")
+                .toBoolean()
+        if (!practicedToday) {
+            sharedPreferences.edit {
+                putString(today.toString(), "true")
             }
         }
     }
