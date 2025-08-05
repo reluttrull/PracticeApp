@@ -14,6 +14,7 @@ import androidx.core.graphics.toColorInt
 import com.example.practiceapp.AlarmHelper.Companion.alarmManager
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+import androidx.core.content.edit
 
 
 /**
@@ -49,7 +50,7 @@ class PracticeAppWidget : AppWidgetProvider() {
                     setOnClickPendingIntent(R.id.appwidget_button, pendingIntent)
                 }
             views.setTextViewText(R.id.appwidget_text, widgetText)
-            views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#FFD8D8".toColorInt());
+            views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#FFD8D8".toColorInt())
 
             // Instruct the widget manager to update the widget
             appWidgetManager.updateAppWidget(appWidgetId, views)
@@ -69,6 +70,7 @@ class PracticeAppWidget : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        val questionText = "Have you practiced today?"
         val angryText = "HAVE YOU PRACTICED TODAY?"
         val successText = "You practiced today!"
         if (intent.action == "com.example.CHECKIN_UPDATE") {
@@ -78,52 +80,55 @@ class PracticeAppWidget : AppWidgetProvider() {
             val practicedToday =
                 sharedPreferences.getString(now.truncatedTo(ChronoUnit.DAYS).toString(), "")
                     .toBoolean()
-            if (!practicedToday) {
-                val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
+            val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
+            if (practicedToday) {
+                views.setTextViewText(R.id.appwidget_text, successText)
+                views.setInt(
+                    R.id.appwidget_layout,
+                    "setBackgroundColor",
+                    "#C1FDAA".toColorInt()
+                )
+            } else {
+                views.setTextViewText(R.id.appwidget_text, questionText)
                 // gradually darker red throughout the day if user hasn't practiced
                 if (now.hour < 8) {
                     views.setInt(
                         R.id.appwidget_layout,
                         "setBackgroundColor",
                         "#FFC6C6".toColorInt()
-                    );
+                    )
                 } else if (now.hour < 12) {
                     views.setInt(
                         R.id.appwidget_layout,
                         "setBackgroundColor",
                         "#FFA0A0".toColorInt()
-                    );
+                    )
                 } else if (now.hour < 16) {
                     views.setInt(
                         R.id.appwidget_layout,
                         "setBackgroundColor",
                         "#FF7F7F".toColorInt()
-                    );
+                    )
                 } else {
                     views.setTextViewText(R.id.appwidget_text, angryText)
                     views.setInt(
                         R.id.appwidget_layout,
                         "setBackgroundColor",
                         "#FF4848".toColorInt()
-                    );
+                    )
                 }
-                val appWidgetManager = AppWidgetManager.getInstance(context)
-                val componentName = ComponentName(context, PracticeAppWidget::class.java)
-                val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-
-                appWidgetManager.updateAppWidget(appWidgetIds, views)
-                // schedule next checkin if hasn't practiced, otherwise update will reset
-                AlarmHelper.scheduleCheckins(context, false)
-            } else {
-                AlarmHelper.scheduleUpdates(context)
             }
+            val appWidgetManager = AppWidgetManager.getInstance(context)
+            val componentName = ComponentName(context, PracticeAppWidget::class.java)
+            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+            appWidgetManager.updateAppWidget(appWidgetIds, views)
+
+            AlarmHelper.scheduleCheckins(context, false)
         } else if (intent.action == "com.example.MY_WIDGET_CLICK") {
-            // for testing
-            val test = AlarmHelper.getActiveWidgetIds(context)
             // Handle the click event
             val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
             views.setTextViewText(R.id.appwidget_text, successText)
-            views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#C1FDAA".toColorInt());
+            views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#C1FDAA".toColorInt())
 
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, PracticeAppWidget::class.java)
@@ -137,9 +142,9 @@ class PracticeAppWidget : AppWidgetProvider() {
                 sharedPreferences.getString(today.toString(), "")
                     .toBoolean()
             if (!practicedToday) {
-                val editor = sharedPreferences.edit()
-                editor.putString(today.toString(), "true")
-                editor.apply()
+                sharedPreferences.edit {
+                    putString(today.toString(), "true")
+                }
             }
         }
 
@@ -155,11 +160,11 @@ class AlarmHelper {
 
             if (activeWidgetIds.isNotEmpty()) {
                 // midnight tomorrow
-                val nextUpdate: ZonedDateTime;
+                val nextUpdate: ZonedDateTime
                 if (isImmediate) {
-                    nextUpdate = ZonedDateTime.now().plusMinutes(1);
+                    nextUpdate = ZonedDateTime.now().plusMinutes(1)
                 } else {
-                    nextUpdate = ZonedDateTime.now().plusHours(1);
+                    nextUpdate = ZonedDateTime.now().plusHours(1)
                 }
                 val pendingIntent = getCheckinPendingIntent(context)
 
@@ -176,7 +181,7 @@ class AlarmHelper {
 
             if (activeWidgetIds.isNotEmpty()) {
                 // midnight tomorrow
-                val nextUpdate = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1);
+                val nextUpdate = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1)
                 val pendingIntent = getCheckinPendingIntent(context)
 
                 context.alarmManager.set(

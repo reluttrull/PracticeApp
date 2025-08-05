@@ -1,18 +1,22 @@
 package com.example.practiceapp
 
+import android.opengl.Visibility
 import android.os.Bundle
 import android.view.View
+import android.widget.Button
 import androidx.compose.ui.graphics.Color
 //import android.graphics.Color
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -28,24 +32,37 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-//        val rootView = findViewById<View>(android.R.id.content)
-//        rootView.setBackgroundColor(Color.RED)
         setContent {
             val currentHour = LocalTime.now().hour
             var hasPracticed by remember {
                 mutableStateOf(false)
             }
-            val colors = if (hasPracticed) {
-                Color(android.graphics.Color.parseColor("#A7FC85"))
+            var displayText by remember {
+                mutableStateOf("")
+            }
+            var isButtonVisible by remember {
+                mutableStateOf(true)
+            }
+            val sharedPreferences = this.getSharedPreferences("PracticeLog", MODE_PRIVATE)
+            val now = ZonedDateTime.now()
+            hasPracticed = sharedPreferences.getString(now.truncatedTo(ChronoUnit.DAYS)
+                      .toString(), "").toBoolean()
+            val colors : Color
+            if (hasPracticed) {
+                colors = Color(android.graphics.Color.parseColor("#A7FC85"))
+                displayText = "You practiced today!"
+                isButtonVisible = false
             } else {
+                displayText = "Have you practiced today?"
                 if (currentHour < 6) {
-                    Color(android.graphics.Color.parseColor("#FFC6C6"))
+                    colors = Color(android.graphics.Color.parseColor("#FFC6C6"))
                 } else if (currentHour < 12) {
-                    Color(android.graphics.Color.parseColor("#FFA0A0"))
+                    colors = Color(android.graphics.Color.parseColor("#FFA0A0"))
                 } else if (currentHour < 18) {
-                    Color(android.graphics.Color.parseColor("#FF7F7F"))
+                    colors = Color(android.graphics.Color.parseColor("#FF7F7F"))
                 } else {
-                    Color(android.graphics.Color.parseColor("#FF4848"))
+                    displayText = "HAVE YOU PRACTICED TODAY?"
+                    colors = Color(android.graphics.Color.parseColor("#FF4848"))
                 }
             }
             PracticeAppTheme {
@@ -58,18 +75,14 @@ class MainActivity : ComponentActivity() {
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "Have you practiced today?",
+                            text = displayText,
                             modifier = Modifier.padding(innerPadding),
                             color = Color.Black
                         )
-                        Button(onClick = { handleClick(); hasPracticed = !hasPracticed }) {
-                            if (!hasPracticed) {
+                        AnimatedVisibility(visible = isButtonVisible) {
+                            Button(onClick = { handleClick(); hasPracticed = true }) {
                                 Text(
                                     text = "I have"
-                                )
-                            } else {
-                                Text(
-                                    text = "I haven't"
                                 )
                             }
                         }
@@ -89,6 +102,8 @@ class MainActivity : ComponentActivity() {
             sharedPreferences.edit {
                 putString(today.toString(), "true")
             }
+            // update widget too
+            AlarmHelper.scheduleCheckins(this, true)
         }
     }
 }
