@@ -28,8 +28,6 @@ class PracticeAppWidget : AppWidgetProvider() {
     ) {
         // There may be multiple widgets active, so update all of them
         for (appWidgetId in appWidgetIds) {
-            val widgetText = "Have you practiced today?"
-            context.getString(R.string.appwidget_text)
 
             // Create an Intent to handle the click
             //val intent = Intent(context, AppWidgetProvider::class.java).apply {
@@ -49,11 +47,11 @@ class PracticeAppWidget : AppWidgetProvider() {
                 .apply {
                     setOnClickPendingIntent(R.id.appwidget_button, pendingIntent)
                 }
-            views.setTextViewText(R.id.appwidget_text, widgetText)
-            views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#FFD8D8".toColorInt())
 
             // Instruct the widget manager to update the widget
             appWidgetManager.updateAppWidget(appWidgetId, views)
+
+            makeUpdates(context)
 
             AlarmHelper.scheduleUpdates(context)
             AlarmHelper.scheduleCheckins(context, true)
@@ -70,62 +68,12 @@ class PracticeAppWidget : AppWidgetProvider() {
     }
 
     override fun onReceive(context: Context, intent: Intent) {
-        val questionText = "Have you practiced today?"
-        val angryText = "HAVE YOU PRACTICED TODAY?"
-        val successText = "You practiced today!"
         if (intent.action == "com.example.CHECKIN_UPDATE") {
-            // check in throughout the day
-            val sharedPreferences = context.getSharedPreferences("PracticeLog", MODE_PRIVATE)
-            val now = ZonedDateTime.now()
-            val practicedToday =
-                sharedPreferences.getString(now.truncatedTo(ChronoUnit.DAYS).toString(), "")
-                    .toBoolean()
-            val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
-            if (practicedToday) {
-                views.setTextViewText(R.id.appwidget_text, successText)
-                views.setInt(
-                    R.id.appwidget_layout,
-                    "setBackgroundColor",
-                    "#C1FDAA".toColorInt()
-                )
-            } else {
-                views.setTextViewText(R.id.appwidget_text, questionText)
-                // gradually darker red throughout the day if user hasn't practiced
-                if (now.hour < 8) {
-                    views.setInt(
-                        R.id.appwidget_layout,
-                        "setBackgroundColor",
-                        "#FFC6C6".toColorInt()
-                    )
-                } else if (now.hour < 12) {
-                    views.setInt(
-                        R.id.appwidget_layout,
-                        "setBackgroundColor",
-                        "#FFA0A0".toColorInt()
-                    )
-                } else if (now.hour < 16) {
-                    views.setInt(
-                        R.id.appwidget_layout,
-                        "setBackgroundColor",
-                        "#FF7F7F".toColorInt()
-                    )
-                } else {
-                    views.setTextViewText(R.id.appwidget_text, angryText)
-                    views.setInt(
-                        R.id.appwidget_layout,
-                        "setBackgroundColor",
-                        "#FF4848".toColorInt()
-                    )
-                }
-            }
-            val appWidgetManager = AppWidgetManager.getInstance(context)
-            val componentName = ComponentName(context, PracticeAppWidget::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-            appWidgetManager.updateAppWidget(appWidgetIds, views)
-
+            makeUpdates(context)
             AlarmHelper.scheduleCheckins(context, false)
         } else if (intent.action == "com.example.MY_WIDGET_CLICK") {
             // Handle the click event
+            val successText = "You practiced today!"
             val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
             views.setTextViewText(R.id.appwidget_text, successText)
             views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#C1FDAA".toColorInt())
@@ -149,6 +97,60 @@ class PracticeAppWidget : AppWidgetProvider() {
         }
 
         super.onReceive(context, intent)
+    }
+
+    private fun makeUpdates(context: Context) {
+        val questionText = "Have you practiced today?"
+        val angryText = "HAVE YOU PRACTICED TODAY?"
+        val successText = "You practiced today!"
+        // check in throughout the day
+        val sharedPreferences = context.getSharedPreferences("PracticeLog", MODE_PRIVATE)
+        val now = ZonedDateTime.now()
+        val practicedToday =
+            sharedPreferences.getString(now.truncatedTo(ChronoUnit.DAYS).toString(), "")
+                .toBoolean()
+        val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
+        if (practicedToday) {
+            views.setTextViewText(R.id.appwidget_text, successText)
+            views.setInt(
+                R.id.appwidget_layout,
+                "setBackgroundColor",
+                "#C1FDAA".toColorInt()
+            )
+        } else {
+            views.setTextViewText(R.id.appwidget_text, questionText)
+            // gradually darker red throughout the day if user hasn't practiced
+            if (now.hour < 8) {
+                views.setInt(
+                    R.id.appwidget_layout,
+                    "setBackgroundColor",
+                    "#FFC6C6".toColorInt()
+                )
+            } else if (now.hour < 12) {
+                views.setInt(
+                    R.id.appwidget_layout,
+                    "setBackgroundColor",
+                    "#FFA0A0".toColorInt()
+                )
+            } else if (now.hour < 16) {
+                views.setInt(
+                    R.id.appwidget_layout,
+                    "setBackgroundColor",
+                    "#FF7F7F".toColorInt()
+                )
+            } else {
+                views.setTextViewText(R.id.appwidget_text, angryText)
+                views.setInt(
+                    R.id.appwidget_layout,
+                    "setBackgroundColor",
+                    "#FF4848".toColorInt()
+                )
+            }
+        }
+        val appWidgetManager = AppWidgetManager.getInstance(context)
+        val componentName = ComponentName(context, PracticeAppWidget::class.java)
+        val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
+        appWidgetManager.updateAppWidget(appWidgetIds, views)
     }
 
 }
