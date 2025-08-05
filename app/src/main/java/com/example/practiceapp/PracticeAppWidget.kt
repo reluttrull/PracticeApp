@@ -16,10 +16,6 @@ import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import androidx.core.content.edit
 
-
-/**
- * Implementation of App Widget functionality.
- */
 class PracticeAppWidget : AppWidgetProvider() {
     override fun onUpdate(
         context: Context,
@@ -53,7 +49,6 @@ class PracticeAppWidget : AppWidgetProvider() {
 
             makeUpdates(context)
 
-            AlarmHelper.scheduleUpdates(context)
             AlarmHelper.scheduleCheckins(context, true)
         }
     }
@@ -178,22 +173,6 @@ class AlarmHelper {
                 )
             }
         }
-        fun scheduleUpdates(context: Context) {
-            val activeWidgetIds = getActiveWidgetIds(context)
-
-            if (activeWidgetIds.isNotEmpty()) {
-                // midnight tomorrow
-                val nextUpdate = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS).plusDays(1)
-                val pendingIntent = getCheckinPendingIntent(context)
-
-                context.alarmManager.set(
-                    AlarmManager.RTC_WAKEUP,
-                    nextUpdate.toInstant()
-                        .toEpochMilli(), // alarm time in millis since 1970-01-01 UTC
-                    pendingIntent
-                )
-            }
-        }
 
         fun getActiveWidgetIds(context: Context): IntArray {
             val appWidgetManager = AppWidgetManager.getInstance(context)
@@ -220,6 +199,8 @@ class AlarmHelper {
     }
 
 }
+
+// this should get checkins moving again after user reboot (untested)
 class BootBroadcastReceiver : BroadcastReceiver() {
     override fun onReceive(pContext: Context, intent: Intent) {
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) {

@@ -1,11 +1,7 @@
 package com.example.practiceapp
 
-import android.opengl.Visibility
 import android.os.Bundle
-import android.view.View
-import android.widget.Button
 import androidx.compose.ui.graphics.Color
-//import android.graphics.Color
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -16,11 +12,6 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
-import androidx.compose.ui.unit.dp
-import androidx.lifecycle.MutableLiveData
 import java.time.LocalTime
 import com.example.practiceapp.ui.theme.PracticeAppTheme
 import java.time.ZonedDateTime
@@ -43,10 +34,12 @@ class MainActivity : ComponentActivity() {
             var isButtonVisible by remember {
                 mutableStateOf(true)
             }
+            // check storage for practice today
             val sharedPreferences = this.getSharedPreferences("PracticeLog", MODE_PRIVATE)
             val now = ZonedDateTime.now()
             hasPracticed = sharedPreferences.getString(now.truncatedTo(ChronoUnit.DAYS)
                       .toString(), "").toBoolean()
+
             val colors : Color
             if (hasPracticed) {
                 colors = Color(android.graphics.Color.parseColor("#A7FC85"))
@@ -54,6 +47,7 @@ class MainActivity : ComponentActivity() {
                 isButtonVisible = false
             } else {
                 displayText = "Have you practiced today?"
+                // gradually darker red the longer user doesn't practice
                 if (currentHour < 6) {
                     colors = Color(android.graphics.Color.parseColor("#FFC6C6"))
                 } else if (currentHour < 12) {
@@ -79,6 +73,7 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding),
                             color = Color.Black
                         )
+                        // disappear once user has practiced
                         AnimatedVisibility(visible = isButtonVisible) {
                             Button(onClick = { handleClick(); hasPracticed = true }) {
                                 Text(
@@ -93,6 +88,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleClick() {
+        // write practice to storage
         val sharedPreferences = this.getSharedPreferences("PracticeLog", MODE_PRIVATE)
         val today = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
         val practicedToday =
@@ -102,18 +98,8 @@ class MainActivity : ComponentActivity() {
             sharedPreferences.edit {
                 putString(today.toString(), "true")
             }
-            // update widget too
+            // update widget too (schedule 1 minute out)
             AlarmHelper.scheduleCheckins(this, true)
         }
     }
 }
-
-
-//@Preview(showBackground = true)
-//@Composable
-//fun MainContentPreview() {
-//    PracticeAppTheme {
-//        MainContent("practiced")
-//        QuestionAndAnswer()
-//    }
-//}
