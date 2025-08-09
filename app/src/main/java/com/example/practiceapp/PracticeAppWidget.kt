@@ -9,6 +9,7 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.view.View
 import android.widget.RemoteViews
 import androidx.core.graphics.toColorInt
 import com.example.practiceapp.AlarmHelper.Companion.alarmManager
@@ -72,6 +73,7 @@ class PracticeAppWidget : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
             views.setTextViewText(R.id.appwidget_text, successText)
             views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#C1FDAA".toColorInt())
+            views.setViewVisibility(R.id.appwidget_button, View.INVISIBLE)
 
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, PracticeAppWidget::class.java)
@@ -112,8 +114,10 @@ class PracticeAppWidget : AppWidgetProvider() {
                 "setBackgroundColor",
                 "#C1FDAA".toColorInt()
             )
+            views.setViewVisibility(R.id.appwidget_button, View.INVISIBLE)
         } else {
             views.setTextViewText(R.id.appwidget_text, questionText)
+            views.setViewVisibility(R.id.appwidget_button, View.VISIBLE)
             // gradually darker red throughout the day if user hasn't practiced
             if (now.hour < 8) {
                 views.setInt(
