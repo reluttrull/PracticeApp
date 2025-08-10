@@ -25,32 +25,40 @@ class PracticeAppWidget : AppWidgetProvider() {
     ) {
         // There may be multiple widgets active, so update all of them
         for (appWidgetId in appWidgetIds) {
-
-            // Create an Intent to handle the click
-            //val intent = Intent(context, AppWidgetProvider::class.java).apply {
-            val intent = Intent(context, PracticeAppWidget::class.java).apply {
-                action = "com.example.MY_WIDGET_CLICK"
-            }
-
-            // Wrap the Intent in a PendingIntent
-            val pendingIntent = PendingIntent.getBroadcast(
-                context,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            // Construct the RemoteViews object
-            val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
-                .apply {
-                    setOnClickPendingIntent(R.id.appwidget_button, pendingIntent)
-                }
-
-            // Instruct the widget manager to update the widget
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+//            val intent = getClickIntent(context, true);
+//
+//            // Wrap the Intent in a PendingIntent
+//            val pendingIntent = PendingIntent.getBroadcast(
+//                context,
+//                0,
+//                intent,
+//                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+//            )
+//            // Construct the RemoteViews object
+//            val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
+//                .apply {
+//                    setOnClickPendingIntent(R.id.appwidget_button, pendingIntent)
+//                }
+//
+//            // Instruct the widget manager to update the widget
+//            appWidgetManager.updateAppWidget(appWidgetId, views)
 
             makeUpdates(context)
 
             AlarmHelper.scheduleCheckins(context, true)
+        }
+    }
+
+    private fun getClickIntent(context: Context, isClick: Boolean): Intent {
+        var eventName = ""
+        if (isClick) {
+            eventName = "com.example.MY_WIDGET_CLICK"
+        } else {
+            eventName = "com.example.MY_WIDGET_UNCLICK"
+        }
+        // Create an Intent to handle the click
+        return Intent(context, PracticeAppWidget::class.java).apply {
+            action = eventName
         }
     }
 
@@ -67,20 +75,18 @@ class PracticeAppWidget : AppWidgetProvider() {
         if (intent.action == "com.example.CHECKIN_UPDATE") {
             makeUpdates(context)
             AlarmHelper.scheduleCheckins(context, false)
+        } else if (intent.action == "com.example.MY_WIDGET_UNCLICK") {
+            val sharedPreferences = context.getSharedPreferences("PracticeLog", MODE_PRIVATE)
+            val today = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
+            val practicedToday =
+                sharedPreferences.getString(today.toString(), "")
+                    .toBoolean()
+            if (practicedToday) {
+                sharedPreferences.edit { remove(today.toString()) }
+            }
+            makeUpdates(context)
+            // Handle undo button event
         } else if (intent.action == "com.example.MY_WIDGET_CLICK") {
-            // Handle the click event
-            val successText = "You practiced today!"
-            val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
-            views.setTextViewText(R.id.appwidget_text, successText)
-            views.setInt(R.id.appwidget_layout, "setBackgroundColor", "#C1FDAA".toColorInt())
-            views.setViewVisibility(R.id.appwidget_button, View.INVISIBLE)
-
-            val appWidgetManager = AppWidgetManager.getInstance(context)
-            val componentName = ComponentName(context, PracticeAppWidget::class.java)
-            val appWidgetIds = appWidgetManager.getAppWidgetIds(componentName)
-
-            appWidgetManager.updateAppWidget(appWidgetIds, views)
-
             val sharedPreferences = context.getSharedPreferences("PracticeLog", MODE_PRIVATE)
             val today = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
             val practicedToday =
@@ -91,6 +97,7 @@ class PracticeAppWidget : AppWidgetProvider() {
                     putString(today.toString(), "true")
                 }
             }
+            makeUpdates(context)
         }
 
         super.onReceive(context, intent)
@@ -108,16 +115,42 @@ class PracticeAppWidget : AppWidgetProvider() {
                 .toBoolean()
         val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
         if (practicedToday) {
+            val intent = getClickIntent(context, false);
+
+            // Wrap the Intent in a PendingIntent
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            // Set pending intent
+            views.apply {
+                    setOnClickPendingIntent(R.id.appwidget_button, pendingIntent)
+                }
+            views.setTextViewText(R.id.appwidget_button, "Undo")
             views.setTextViewText(R.id.appwidget_text, successText)
             views.setInt(
                 R.id.appwidget_layout,
                 "setBackgroundColor",
                 "#C1FDAA".toColorInt()
             )
-            views.setViewVisibility(R.id.appwidget_button, View.INVISIBLE)
         } else {
             views.setTextViewText(R.id.appwidget_text, questionText)
-            views.setViewVisibility(R.id.appwidget_button, View.VISIBLE)
+            val intent = getClickIntent(context, true);
+
+            // Wrap the Intent in a PendingIntent
+            val pendingIntent = PendingIntent.getBroadcast(
+                context,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+            // Set pending intent
+            views.apply {
+                    setOnClickPendingIntent(R.id.appwidget_button, pendingIntent)
+                }
+            views.setTextViewText(R.id.appwidget_button, "I have")
             // gradually darker red throughout the day if user hasn't practiced
             if (now.hour < 8) {
                 views.setInt(
