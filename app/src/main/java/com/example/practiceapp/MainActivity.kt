@@ -31,7 +31,7 @@ class MainActivity : ComponentActivity() {
             var displayText by remember {
                 mutableStateOf("")
             }
-            var isButtonVisible by remember {
+            var isButtonClick by remember {
                 mutableStateOf(true)
             }
             // check storage for practice today
@@ -44,7 +44,7 @@ class MainActivity : ComponentActivity() {
             if (hasPracticed) {
                 colors = Color(android.graphics.Color.parseColor("#A7FC85"))
                 displayText = "You practiced today!"
-                isButtonVisible = false
+                isButtonClick = false
             } else {
                 displayText = "Have you practiced today?"
                 // gradually darker red the longer user doesn't practice
@@ -58,6 +58,7 @@ class MainActivity : ComponentActivity() {
                     displayText = "HAVE YOU PRACTICED TODAY?"
                     colors = Color(android.graphics.Color.parseColor("#FF4848"))
                 }
+                isButtonClick = true
             }
             PracticeAppTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
@@ -73,11 +74,19 @@ class MainActivity : ComponentActivity() {
                             modifier = Modifier.padding(innerPadding),
                             color = Color.Black
                         )
-                        // disappear once user has practiced
-                        AnimatedVisibility(visible = isButtonVisible) {
+                        // if user hasn't practiced
+                        AnimatedVisibility(visible = isButtonClick) {
                             Button(onClick = { handleClick(); hasPracticed = true }) {
                                 Text(
                                     text = "I have"
+                                )
+                            }
+                        }
+                        // if user has practiced
+                        AnimatedVisibility(visible = !isButtonClick) {
+                            Button(onClick = { handleUndo(); hasPracticed = false }) {
+                                Text(
+                                    text = "Undo"
                                 )
                             }
                         }
@@ -85,6 +94,20 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+    }
+
+    private fun handleUndo() {
+        // delete practice from storage
+        val sharedPreferences = this.getSharedPreferences("PracticeLog", MODE_PRIVATE)
+        val today = ZonedDateTime.now().truncatedTo(ChronoUnit.DAYS)
+        val practicedToday =
+            sharedPreferences.getString(today.toString(), "")
+                .toBoolean()
+        if (practicedToday) {
+            sharedPreferences.edit { remove(today.toString()) }
+        }
+        // update widget too (schedule 5 seconds out)
+        AlarmHelper.scheduleCheckins(this, true)
     }
 
     private fun handleClick() {
@@ -98,7 +121,7 @@ class MainActivity : ComponentActivity() {
             sharedPreferences.edit {
                 putString(today.toString(), "true")
             }
-            // update widget too (schedule 1 minute out)
+            // update widget too (schedule 5 seconds out)
             AlarmHelper.scheduleCheckins(this, true)
         }
     }

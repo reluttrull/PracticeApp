@@ -9,7 +9,6 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
-import android.view.View
 import android.widget.RemoteViews
 import androidx.core.graphics.toColorInt
 import com.example.practiceapp.AlarmHelper.Companion.alarmManager
@@ -115,7 +114,7 @@ class PracticeAppWidget : AppWidgetProvider() {
                 .toBoolean()
         val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
         if (practicedToday) {
-            val intent = getClickIntent(context, false);
+            val intent = getClickIntent(context, false)
 
             // Wrap the Intent in a PendingIntent
             val pendingIntent = PendingIntent.getBroadcast(
@@ -137,7 +136,7 @@ class PracticeAppWidget : AppWidgetProvider() {
             )
         } else {
             views.setTextViewText(R.id.appwidget_text, questionText)
-            val intent = getClickIntent(context, true);
+            val intent = getClickIntent(context, true)
 
             // Wrap the Intent in a PendingIntent
             val pendingIntent = PendingIntent.getBroadcast(
@@ -196,7 +195,7 @@ class AlarmHelper {
                 // midnight tomorrow
                 val nextUpdate: ZonedDateTime
                 if (isImmediate) {
-                    nextUpdate = ZonedDateTime.now().plusMinutes(1)
+                    nextUpdate = ZonedDateTime.now().plusSeconds(5)
                 } else {
                     nextUpdate = ZonedDateTime.now().plusHours(1)
                 }
