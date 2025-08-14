@@ -1,6 +1,5 @@
 package com.example.practiceapp
 
-import android.app.AlarmManager
 import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.appwidget.AppWidgetProvider
@@ -9,12 +8,13 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
+import android.os.Handler
+import android.os.Looper
 import android.widget.RemoteViews
+import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
-import com.example.practiceapp.AlarmHelper.Companion.alarmManager
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
-import androidx.core.content.edit
 
 class PracticeAppWidget : AppWidgetProvider() {
     override fun onUpdate(
@@ -24,23 +24,6 @@ class PracticeAppWidget : AppWidgetProvider() {
     ) {
         // There may be multiple widgets active, so update all of them
         for (appWidgetId in appWidgetIds) {
-//            val intent = getClickIntent(context, true);
-//
-//            // Wrap the Intent in a PendingIntent
-//            val pendingIntent = PendingIntent.getBroadcast(
-//                context,
-//                0,
-//                intent,
-//                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-//            )
-//            // Construct the RemoteViews object
-//            val views = RemoteViews(context.packageName, R.layout.practice_app_widget)
-//                .apply {
-//                    setOnClickPendingIntent(R.id.appwidget_button, pendingIntent)
-//                }
-//
-//            // Instruct the widget manager to update the widget
-//            appWidgetManager.updateAppWidget(appWidgetId, views)
 
             makeUpdates(context)
 
@@ -67,7 +50,8 @@ class PracticeAppWidget : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         // Enter relevant functionality for when the last widget is disabled
-        context.alarmManager.cancel(AlarmHelper.getCheckinPendingIntent(context))
+        val handler = Handler(Looper.getMainLooper())
+        handler.removeCallbacksAndMessages(null)
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -192,21 +176,24 @@ class AlarmHelper {
             val activeWidgetIds = getActiveWidgetIds(context)
 
             if (activeWidgetIds.isNotEmpty()) {
-                // midnight tomorrow
-                val nextUpdate: ZonedDateTime
+                val delay : Long
                 if (isImmediate) {
-                    nextUpdate = ZonedDateTime.now().plusSeconds(5)
+                    delay = 1000 // 1 second
                 } else {
-                    nextUpdate = ZonedDateTime.now().plusHours(1)
+                    delay = 3600000 // 1 hour
                 }
                 val pendingIntent = getCheckinPendingIntent(context)
 
-                context.alarmManager.set(
-                    AlarmManager.RTC_WAKEUP,
-                    nextUpdate.toInstant()
-                        .toEpochMilli(), // alarm time in millis since 1970-01-01 UTC
-                    pendingIntent
-                )
+                val handler = Handler(Looper.getMainLooper())
+                // Schedule the PendingIntent to be triggered after a delay
+                handler.postDelayed({
+                    try {
+                        pendingIntent.send() // Trigger the PendingIntent
+                    } catch (e: PendingIntent.CanceledException) {
+                        e.printStackTrace() // Handle the exception if the PendingIntent is canceled
+                    }
+                }, delay)
+
             }
         }
 
@@ -229,9 +216,6 @@ class AlarmHelper {
 
             return PendingIntent.getBroadcast(context, requestCode, updateIntent, flags)
         }
-
-        val Context.alarmManager: AlarmManager
-            get() = getSystemService(Context.ALARM_SERVICE) as AlarmManager
     }
 
 }
