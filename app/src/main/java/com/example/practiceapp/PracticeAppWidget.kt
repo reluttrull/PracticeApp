@@ -9,12 +9,14 @@ import android.content.Context
 import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.os.Handler
+import android.os.HandlerThread
 import android.os.Looper
 import android.widget.RemoteViews
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
+
 
 class PracticeAppWidget : AppWidgetProvider() {
     override fun onUpdate(
@@ -50,8 +52,12 @@ class PracticeAppWidget : AppWidgetProvider() {
 
     override fun onDisabled(context: Context) {
         // Enter relevant functionality for when the last widget is disabled
-        val handler = Handler(Looper.getMainLooper())
+        val handlerThread = HandlerThread("BackgroundThread")
+        handlerThread.start()
+        val backgroundLooper = handlerThread.looper
+        val handler = Handler(backgroundLooper)
         handler.removeCallbacksAndMessages(null)
+        handlerThread.quitSafely();
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -87,6 +93,8 @@ class PracticeAppWidget : AppWidgetProvider() {
     }
 
     private fun makeUpdates(context: Context) {
+        val handlerThread = HandlerThread("BackgroundThread")
+        handlerThread.quitSafely();
         val questionText = "Have you practiced today?"
         val angryText = "HAVE YOU PRACTICED TODAY?"
         val successText = "You practiced today!"
@@ -184,7 +192,10 @@ class AlarmHelper {
                 }
                 val pendingIntent = getCheckinPendingIntent(context)
 
-                val handler = Handler(Looper.getMainLooper())
+                val handlerThread = HandlerThread("BackgroundThread")
+                handlerThread.start()
+                val backgroundLooper = handlerThread.looper
+                val handler = Handler(backgroundLooper)
                 // Schedule the PendingIntent to be triggered after a delay
                 handler.postDelayed({
                     try {
@@ -193,7 +204,6 @@ class AlarmHelper {
                         e.printStackTrace() // Handle the exception if the PendingIntent is canceled
                     }
                 }, delay)
-
             }
         }
 
