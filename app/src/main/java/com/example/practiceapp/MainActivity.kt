@@ -54,11 +54,11 @@ class MainActivity : ComponentActivity() {
             } else {
                 displayText = "Have you practiced today?"
                 // gradually darker red the longer user doesn't practice
-                if (currentHour < 6) {
+                if (currentHour < 8) {
                     colors = Color(android.graphics.Color.parseColor("#FFC6C6"))
                 } else if (currentHour < 12) {
                     colors = Color(android.graphics.Color.parseColor("#FFA0A0"))
-                } else if (currentHour < 18) {
+                } else if (currentHour < 16) {
                     colors = Color(android.graphics.Color.parseColor("#FF7F7F"))
                 } else {
                     displayText = "HAVE YOU PRACTICED TODAY?"
