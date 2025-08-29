@@ -2,5 +2,5 @@
     <string name="app_name">PracticeApp</string>
     <string name="appwidget_text">Have you practiced today?</string>
     <string name="add_widget">Add widget</string>
-    <string name="app_widget_description">This is an app widget description</string>
+    <string name="app_widget_description">Widget that reminds you to practice, passive-aggressively</string>
 </resources>
