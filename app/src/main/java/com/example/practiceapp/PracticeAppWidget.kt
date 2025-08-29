@@ -10,7 +10,6 @@ import android.content.Context.MODE_PRIVATE
 import android.content.Intent
 import android.os.Handler
 import android.os.HandlerThread
-import android.os.Looper
 import android.widget.RemoteViews
 import androidx.core.content.edit
 import androidx.core.graphics.toColorInt
@@ -34,12 +33,7 @@ class PracticeAppWidget : AppWidgetProvider() {
     }
 
     private fun getClickIntent(context: Context, isClick: Boolean): Intent {
-        var eventName = ""
-        if (isClick) {
-            eventName = "com.example.MY_WIDGET_CLICK"
-        } else {
-            eventName = "com.example.MY_WIDGET_UNCLICK"
-        }
+        val eventName = if (isClick) "com.example.MY_WIDGET_CLICK" else "com.example.MY_WIDGET_UNCLICK"
         // Create an Intent to handle the click
         return Intent(context, PracticeAppWidget::class.java).apply {
             action = eventName
@@ -57,7 +51,7 @@ class PracticeAppWidget : AppWidgetProvider() {
         val backgroundLooper = handlerThread.looper
         val handler = Handler(backgroundLooper)
         handler.removeCallbacksAndMessages(null)
-        handlerThread.quitSafely();
+        handlerThread.quitSafely()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -94,7 +88,7 @@ class PracticeAppWidget : AppWidgetProvider() {
 
     private fun makeUpdates(context: Context) {
         val handlerThread = HandlerThread("BackgroundThread")
-        handlerThread.quitSafely();
+        handlerThread.quitSafely()
         val questionText = "Have you practiced today?"
         val angryText = "HAVE YOU PRACTICED TODAY?"
         val successText = "You practiced today!"
@@ -184,12 +178,7 @@ class AlarmHelper {
             val activeWidgetIds = getActiveWidgetIds(context)
 
             if (activeWidgetIds.isNotEmpty()) {
-                val delay : Long
-                if (isImmediate) {
-                    delay = 1000 // 1 second
-                } else {
-                    delay = 3600000 // 1 hour
-                }
+                val delay : Long = if (isImmediate) 1000 else 3600000
                 val pendingIntent = getCheckinPendingIntent(context)
 
                 val handlerThread = HandlerThread("BackgroundThread")
@@ -207,14 +196,14 @@ class AlarmHelper {
             }
         }
 
-        fun getActiveWidgetIds(context: Context): IntArray {
+        private fun getActiveWidgetIds(context: Context): IntArray {
             val appWidgetManager = AppWidgetManager.getInstance(context)
             val componentName = ComponentName(context, PracticeAppWidget::class.java)
 
             // return ID of all active widgets within this AppWidgetProvider
             return appWidgetManager.getAppWidgetIds(componentName)
         }
-        fun getCheckinPendingIntent(context: Context): PendingIntent {
+        private fun getCheckinPendingIntent(context: Context): PendingIntent {
             val widgetClass = PracticeAppWidget::class.java
             val widgetIds = getActiveWidgetIds(context)
             val updateIntent = Intent(context, widgetClass)

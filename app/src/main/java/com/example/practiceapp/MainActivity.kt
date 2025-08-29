@@ -1,6 +1,5 @@
 package com.example.practiceapp
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.compose.ui.graphics.Color
 import androidx.activity.ComponentActivity
@@ -18,10 +17,6 @@ import com.example.practiceapp.ui.theme.PracticeAppTheme
 import java.time.ZonedDateTime
 import java.time.temporal.ChronoUnit
 import androidx.core.content.edit
-import android.content.pm.PackageManager
-import android.provider.Settings
-import androidx.core.app.ActivityCompat
-import androidx.core.content.ContextCompat
 
 class MainActivity : ComponentActivity() {
 
